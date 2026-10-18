@@ -54,6 +54,7 @@ button.r{border:0;background:none;color:var(--ac);font-size:13px;padding:6px 0}
 .cl{aspect-ratio:1;border-radius:8px;font-size:11px;display:flex;align-items:center;justify-content:center;border:1px solid var(--bd);color:var(--mu)}
 .cl.ok{background:#2f9e5b;color:#fff;border-color:#2f9e5b}.cl.pa{background:#e0a31a;color:#fff;border-color:#e0a31a}.cl.no{background:var(--bd)}.cl.hoy{outline:2px solid var(--ac)}
 .lock{opacity:.4;pointer-events:none}
+.big{width:100%;border:0;background:var(--ac);color:#fff;border-radius:12px;padding:12px;font-size:16px}
 select.sel{flex:1;min-width:0;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:8px;padding:8px;font-size:14px}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
 nav button{flex:1;border:0;background:none;color:var(--mu);font-size:11px;padding:6px 0}
@@ -76,7 +77,7 @@ nav button.on{color:var(--ac);font-weight:600}
 var S={};
 try{S=JSON.parse(localStorage.getItem("pbg")||"{}")}catch(e){S={}}
 function save(){try{localStorage.setItem("pbg",JSON.stringify(S))}catch(e){}}
-S.pl=S.pl||{};S.wt=S.wt||{};S.wsk=S.wsk||{};S.bp=S.bp||{};S.ms=S.ms||{};S.lg=S.lg||{};S.ag=S.ag||{};S.dl=S.dl||[];var SEED=[
+S.pl=S.pl||{};S.un=S.un||{};S.rcm=S.rcm||{};S.wt=S.wt||{};S.wsk=S.wsk||{};S.bp=S.bp||{};S.ms=S.ms||{};S.lg=S.lg||{};S.ag=S.ag||{};S.dl=S.dl||[];var SEED=[
 {i:1,s:'AEC',k:'Examen',n:'Parcial temas 1-2',d:'2026-10-16'},
 {i:2,s:'ISO',k:'Examen',n:'Examen de guiones shell',d:'2026-10-23'},
 {i:3,s:'AEC',k:'Práctica',n:'Cuestionarios prácticas 2-3 (9–11 nov; recuperación 6 nov)',d:'2026-11-09'},
@@ -144,7 +145,7 @@ var DIAS={
 var ORD=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
 
 function opt(d,s){var id=S.pl[d+s];if(!id)DIAS[d].s.forEach(function(x){if(x[0]===s)id=x[2]});return OPT[s].filter(function(o){return o[0]===id})[0]||OPT[s][0]}
-function lista(){var r={};ORD.forEach(function(d){DIAS[d].s.forEach(function(s){if(s[0]==="x"||(s[0]==="c"&&S.sc))return;opt(d,s[0])[3].forEach(function(i){r[i[0]]=(r[i[0]]||0)+i[1]})})});return r}
+function lista(){var r={};ORD.forEach(function(d){DIAS[d].s.forEach(function(s){if(s[0]==="x"||(s[0]==="c"&&S.sc)||subs(d)[s[0]])return;opt(d,s[0])[3].forEach(function(i){r[i[0]]=(r[i[0]]||0)+i[1]})})});return r}
 function fmt(k,q){var u=ITEMS[k][1];if(u!=="ud"&&q>=1000)return (q/1000).toFixed(1).replace(".",",")+(u==="g"?" kg":" l");return Math.round(q)+" "+u}
 function pk(d,s,v){S.pl[d+s]=v;save();render()}
 
@@ -190,7 +191,7 @@ function wkDate(n){var d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7)+n);
 function days(a,b){return Math.round((new Date(b+"T12:00")-new Date(a+"T12:00"))/864e5)}
 function sd(date){return Object.keys(S.ck).some(function(k){return k.indexOf("s"+date)===0})}
 function strk(){var d=new Date(),n=0;if(!sd(ds(d)))d.setDate(d.getDate()-1);while(sd(ds(d))){n++;d.setDate(d.getDate()-1)}return n}
-function pd(){var n=0,T=ds(new Date());for(var d=new Date("2026-10-15T12:00");ds(d)<=T;d.setDate(d.getDate()+1))if(sd(ds(d)))n++;return n}
+function pd(){var n=0,T=ds(new Date());for(var d=new Date(START+"T12:00");ds(d)<=T;d.setDate(d.getDate()+1))if(sd(ds(d)))n++;return n}
 function setUd(d){ud=d;render()}
 function setAg(k,v){S.ag[k]=v;save();render()}
 function startT(){S.tm=Date.now()+1500000;save();render()}
@@ -204,19 +205,19 @@ function uniView(){
   h+=chips(ORD,ud,"setUd");
   if(f){var n=days(T,f.d);h+=`<div class="card"><span class="tag">${n===0?'HOY':n===1?'MAÑANA':'En '+n+' días'}</span><p class="sub"><b>Foco: ${esc(f.s)}</b> · ${esc(f.n)} (${f.d})</p></div>`}
   var mk="s"+dt+"m",left=S.tm?Math.max(0,Math.round((S.tm-Date.now())/1000)):0;
-  h+=`<div class="card"><h3>✅ Mínimo de estudio · 25 min</h3><p class="sub">${esc(B.min)}. Con esto el día ya cuenta; lo demás es extra.</p><label class="it"><input type="checkbox" ${S.ck[mk]?'checked':''} onchange="tg('${mk}',this.checked);render()"><span>Mínimo hecho</span></label>`+(dt===T?(S.tm?`<div class="ex"><b id="tmr" style="font-size:24px">${Math.floor(left/60)}:${('0'+left%60).slice(-2)}</b><button class="r" onclick="stopT()">Parar</button></div>`:`<button class="chip on" style="margin-top:6px" onclick="startT()">▶ Empezar 25 min</button>`):'')+`<p class="sub">🔥 Racha de estudio: <b>${strk()}</b> días · Días con estudio desde el 15 oct: <b>${pd()}</b></p></div>`;
+  h+=`<div class="card"><h3>✅ Mínimo de estudio · 25 min</h3><p class="sub">${esc(B.min)}. Con esto el día ya cuenta; lo demás es extra.</p><label class="it"><input type="checkbox" ${S.ck[mk]?'checked':''} onchange="tg('${mk}',this.checked);render()"><span>Mínimo hecho</span></label>`+(dt===T?(S.tm?`<div class="ex"><b id="tmr" style="font-size:24px">${Math.floor(left/60)}:${('0'+left%60).slice(-2)}</b><button class="r" onclick="stopT()">Parar</button></div>`:`<button class="chip on" style="margin-top:6px" onclick="startT()">▶ Empezar 25 min</button>`):'')+`<p class="sub">🔥 Racha de estudio: <b>${strk()}</b> días · Días con estudio desde el 19 oct: <b>${pd()}</b></p></div>`;
   h+=`<div class="card"><h3>📚 Agenda · ${ud}</h3><p class="sub">${esc(B.n)}</p>`+B.b.map(function(b,i){var k=ud+i,s=S.ag[k]||b[2],id="s"+dt+"b"+i;return `<label class="it"><input type="checkbox" ${S.ck[id]?'checked':''} onchange="tg('${id}',this.checked);render()"><span><b>${b[0]} · ${b[1]} min</b>${f&&f.s===s?' ⭐':''}<em>${s}</em></span></label><div class="gy"><select class="sel" onchange="setAg('${k}',this.value)">${SUBJ.map(function(x){return `<option ${x===s?'selected':''}>${x}</option>`}).join("")}</select></div>`}).join("")+`</div>`;
   var m={};ORD.forEach(function(d,j){var dd=wkDate(j);BLK[d].b.forEach(function(b,i){if(S.ck["s"+dd+"b"+i]){var s=S.ag[d+i]||b[2];m[s]=(m[s]||0)+b[1]}});if(S.ck["s"+dd+"m"])m["Mínimos"]=(m["Mínimos"]||0)+25});
   h+=`<div class="card"><h3>Esta semana</h3><p class="sub">${Object.keys(m).length?Object.keys(m).map(function(s){return s+" "+m[s]+" min"}).join(" · "):"Aún sin bloques marcados"}</p></div>`;
   h+=`<div class="card"><h3>📅 Entregas y exámenes</h3>`+S.dl.slice().sort(function(a,b){return a.d<b.d?-1:1}).map(function(x){var n=days(T,x.d);return `<div class="meal"><b>${esc(x.s)} · ${esc(x.n)}</b><span class="kc" style="color:${n<0?'var(--mu)':n<=3?'var(--ac)':'var(--ac2)'}">${n<0?'pasado':n===0?'HOY':n+' d'}</span><em>${x.d} · ${esc(x.k)}</em><button class="r" onclick="delDl(${x.i})">Quitar</button></div>`}).join("")+`<div class="ex" style="margin-top:8px"><select class="sel" id="ds">${SUBJ.map(function(x){return '<option>'+x+'</option>'}).join("")}</select><select class="sel" id="dk"><option>Examen</option><option>Entrega</option><option>Práctica</option></select><input class="n" style="width:100%" id="dn" placeholder="Nombre (opcional)"><input class="n" type="date" id="dd" style="width:auto"><button class="chip on" onclick="addDl()">Añadir</button></div><p class="sub">Los profesores van avisando poco a poco: añádelas aquí cuando te las digan.</p></div>`;
   return h}
-var START="2026-10-15",END="2026-12-15",DN=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"],TMPW=null,MEM={},DB=null;
+var START="2026-10-19",END="2026-12-17",DN=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"],TMPW=null,MEM={},DB=null;
 function wd(d){return ORD[(new Date(d+"T12:00").getDay()+6)%7]}
 function addD(d,n){var x=new Date(d+"T12:00");x.setDate(x.getDate()+n);return ds(x)}
 function fd(d){var x=new Date(d+"T12:00");return DN[x.getDay()]+" "+x.getDate()+"/"+(x.getMonth()+1)}
 function isPh(d){return wd(d)==="Dom"||d===START||d===END}
-function weekReset(){var w=wkDate(0);if(S.wk!==w){if(S.wk)syncWeek(S.wk);Object.keys(S.ck).forEach(function(k){if("mg".indexOf(k.charAt(0))>=0)delete S.ck[k]});S.ex={};S.wk=w;save()}}
-function syncDay(d){var n=wd(d),D=DIAS[n],eat=0;D.s.forEach(function(s){if(s[0]!=="x"&&S.ck["m"+n+s[0]])eat+=opt(n,s[0])[2]});var g=GYM[n],st=g&&!g[2]?g[1].every(function(e,i){return !e[6]||S.ck["g"+n+i]}):false;S.lg[d]={c:Math.round((eat+(parseInt(S.ex[n])||0))/D.tg*100),t:st?1:0}}
+function weekReset(){var w=wkDate(0);if(S.wk!==w){if(S.wk)syncWeek(S.wk);Object.keys(S.ck).forEach(function(k){if("mg".indexOf(k.charAt(0))>=0)delete S.ck[k]});S.ex={};S.un={};S.rcm={};S.wk=w;save()}}
+function syncDay(d){var n=wd(d),D=DIAS[n],eat=0,rp=subs(n);D.s.forEach(function(s){if(s[0]!=="x"&&!rp[s[0]]&&S.ck["m"+n+s[0]])eat+=opt(n,s[0])[2]});var g=GYM[n],st=g&&!g[2]?g[1].every(function(e,i){return !e[6]||S.ck["g"+n+i]}):false;S.lg[d]={c:Math.round((eat+xk(n))/D.tg*100),t:st?1:0}}
 function syncWeek(m){var T=ds(new Date());for(var i=0;i<7;i++){var d=addD(m,i);if(d<=T)syncDay(d)}}
 function dst(d){var l=S.lg[d]||{c:0,t:0},n=wd(d),rq=n!=="Sáb"&&n!=="Dom",c=l.c>=80,t=!rq||!!(l.t||S.ck["t"+d]),s=sd(d),p=!isPh(d)||!!(S.bp[d+"f"]&&S.bp[d+"l"]&&S.bp[d+"e"]);return {c:c,t:t,s:s,p:p,rq:rq,ok:c&&t&&s&&p,n:(c?1:0)+(rq&&t?1:0)+(s?1:0)+(isPh(d)&&p?1:0)}}
 function streak(){var d=ds(new Date()),n=0,ms=[],i=0;if(!dst(d).ok)d=addD(d,-1);for(;d>=START;d=addD(d,-1),i++){if(dst(d).ok)n++;else{ms.push(i);if(ms.length>1&&ms[ms.length-1]-ms[ms.length-2]<7)break}}return n}
@@ -260,7 +261,7 @@ function progView(){
   var off=(new Date(START+"T12:00").getDay()+6)%7,c="",i;
   for(i=0;i<off;i++)c+="<div></div>";
   for(i=0;i<N;i++){var d=addD(START,i),st=dst(d),k=d>T?"":st.ok?"ok":st.n>0?"pa":d<T?"no":"";c+=`<div class="cl ${k}${d===T?' hoy':''}">${new Date(d+"T12:00").getDate()}</div>`}
-  h+=`<div class="grid">${c}</div><p class="sub">Verde cumplido · ámbar parcial · gris fallado. Empieza el jueves 15 oct.</p></div>`;
+  h+=`<div class="grid">${c}</div><p class="sub">Verde cumplido · ámbar parcial · gris fallado. Empieza el lunes 19 oct.</p></div>`;
   var wk=Object.keys(S.wt).sort(),W={};
   wk.forEach(function(d){var j=Math.max(0,Math.floor(days(START,d)/7));(W[j]=W[j]||[]).push(+S.wt[d])});
   var ks=Object.keys(W).map(Number).sort(function(a,b){return a-b}),av=function(a){return a.reduce(function(x,y){return x+y},0)/a.length};
@@ -279,6 +280,27 @@ function progView(){
   h+='<div class="card"><h3>🤳 Cómo hacerte las fotos</h3>'+["📍 Siempre igual: mismo sitio, misma luz (ventana, sin contraluz) y fondo liso.","⏰ Domingo por la mañana, en ayunas, tras ir al baño y pesarte.","📱 Móvil vertical y fijo (trípode o apoyado), a la altura del ombligo y a ~2 m. Cuerpo entero, temporizador 10 s, zoom 1x, sin filtro ni flash. Marca el suelo con cinta.","🧍 Frente: relajado, pies a ancho de hombros, brazos sueltos y algo separados. No metas barriga ni saques pecho.","↔️ Lado: de perfil, brazos colgando, mirada al frente. 🔙 Espalda: igual de relajado.","💪 Opcional: frente tensado, siempre con la misma pose.","👕 Misma ropa: solo shorts o bóxer.","📏 Medidas: hombros (por lo más ancho), pecho (a la altura de los pezones), cintura (ombligo, tras soltar el aire), brazo (relajado, punto medio), muslo (a medio camino rodilla-ingle).","⚖️ Báscula: en ayunas, tras el baño, sin ropa, misma báscula en suelo duro. Mira la media semanal, no el día: el peso oscila ±1 kg."].map(function(x){return '<div class="meal"><em>'+x+'</em></div>'}).join("")+'</div>';
   h+='<div class="card"><h3>💾 Copia de seguridad</h3><p class="sub">Guarda tus datos (sin fotos).</p><button class="chip" onclick="exJ()">Exportar</button> <label class="chip">Importar<input type="file" accept=".json" style="display:none" onchange="imJ(this)"></label></div>';
   return h}
+var PRE=[["Hamburguesa sola",550],["Menú hamburguesa grande",1100],["Patatas fritas medianas",380],["Porción de pizza",300],["Pizza individual",1000],["Kebab o dürüm",850],["Bocadillo grande",700],["Ración para compartir",450],["Plato de arroz o paella",700],["Cocido (plato completo)",800],["Helado",250],["Postre (tarta)",400],["Caña de cerveza",150],["Refresco 33 cl",140]];
+function subs(n){var r={};(S.un[n]||[]).forEach(function(u){if(u.s)r[u.s]=u.n});return r}
+function xk(n){return (parseInt(S.ex[n])||0)+(S.un[n]||[]).reduce(function(a,u){return a+u.k},0)}
+function pre(i){if(i==="")return;document.getElementById("un").value=PRE[i][0];document.getElementById("uk").value=PRE[i][1]}
+function addUn(n){var k=parseInt(document.getElementById("uk").value),x=document.getElementById("un").value.trim()||"Comida no prevista";if(!k||k<1)return;(S.un[n]=S.un[n]||[]).push({n:x,k:k,s:document.getElementById("us").value});save();render()}
+function delUn(n,i){S.un[n].splice(i,1);save();render()}
+function recalc(n){var D=DIAS[n],rp=subs(n),eaten=xk(n),pend=[];
+  D.s.forEach(function(s){if(s[0]==="x"||rp[s[0]])return;if(S.ck["m"+n+s[0]])eaten+=opt(n,s[0])[2];else pend.push(s[0])});
+  var rem=D.tg-eaten;
+  if(!pend.length){S.rcm[n]="No quedan comidas pendientes. Llevas "+eaten+" de "+D.tg+" kcal.";save();render();return}
+  var C=pend.map(function(s){return OPT[s].filter(function(o){return o[3].length})}),best=null,cur=[];
+  (function rec(i,sum,ch){if(i===C.length){var sc=Math.abs(sum-rem)+ch*25;if(!best||sc<best.sc)best={sc:sc,sum:sum,ids:cur.slice()};return}C[i].forEach(function(o){cur[i]=o[0];rec(i+1,sum+o[2],ch+(o[0]===opt(n,pend[i])[0]?0:1))})})(0,0,0);
+  pend.forEach(function(s,i){S.pl[n+s]=best.ids[i]});
+  var df=rem-best.sum;
+  S.rcm[n]="Pendiente: "+rem+" kcal. Plan ajustado a "+best.sum+" kcal."+(df>150?" Te faltan ~"+df+" kcal: añade un yogur griego con plátano y frutos secos (~400).":df<-150?" Vas ~"+(-df)+" kcal por encima: cena ligera y no te saltes comidas para compensar.":" Perfecto.");
+  save();render()}
+function unView(n){var L=S.un[n]||[],h='<div class="card"><h3>🍔 ¿Comiste algo no previsto?</h3><p class="sub">Elige uno orientativo o escribe el tuyo. Para un cálculo más fino, mándame la foto o el texto en el chat del proyecto y te digo los kcal.</p>';
+  h+=L.map(function(u,i){return '<div class="meal"><b>'+esc(u.n)+'</b><span class="kc">'+u.k+' kcal</span><em>'+(u.s?'Sustituye: '+SL[u.s].toLowerCase():'Extra')+'</em><button class="r" onclick="delUn(\''+n+'\','+i+')">Quitar</button></div>'}).join("");
+  h+='<select class="sel" style="width:100%;margin:6px 0" onchange="pre(this.value)"><option value="">Orientativos…</option>'+PRE.map(function(p,i){return '<option value="'+i+'">'+p[0]+' · ~'+p[1]+'</option>'}).join("")+'</select>';
+  h+='<div class="ex"><input class="n" style="flex:1;width:auto" id="un" placeholder="Qué comiste"><input class="n" id="uk" type="number" inputmode="numeric" placeholder="kcal"><select class="sel" id="us"><option value="">Es un extra</option>'+Object.keys(SL).map(function(k){return '<option value="'+k+'">Sustituye '+SL[k].toLowerCase()+'</option>'}).join("")+'</select><button class="chip on" onclick="addUn(\''+n+'\')">Añadir</button></div>';
+  h+='<button class="big" style="margin-top:10px" onclick="recalc(\''+n+'\')">🔄 Recalcular el resto del día</button><p class="sub">Marca antes lo que ya comiste. Lo pendiente se ajusta a tus kcal.</p>'+(S.rcm[n]?'<p class="sub"><b>'+esc(S.rcm[n])+'</b></p>':'')+'</div>';return h}
 var WARM={
 "Mar":["5 min de bici o cinta suave (que suba la temperatura)","Movilidad de tobillo y cadera: sentadilla goblet profunda con pausa ×8","Puente de glúteo ×15 y zancada atrás sin peso ×8 por pierna"],
 "Jue":["Rotación externa en polea ×15 por brazo (manguito rotador)","Goma elástica: brazos estirados de delante a atrás por encima de la cabeza ×10","Retracción escapular o face pull ligero ×12","Movilidad torácica: rotaciones en cuadrupedia ×8 por lado"],
@@ -336,9 +358,9 @@ function render(){
       if(ks.length)h+='<div class="card"><h3>'+c[1]+'</h3>'+ks.map(function(k){return chk("c"+k,ITEMS[k][0]+" — "+fmt(k,L[k]))}).join("")+'</div>'});
     h+='<p class="sub" style="padding:0 4px">Revisa despensa: sal, pimienta, ajo en polvo.</p>';
   }else if(tab==="dieta"){
-    var d=DIAS[dia],tot=0,eat=0;
-    d.s.forEach(function(s){if(s[0]==="x")return;var o=opt(dia,s[0]);tot+=o[2];if(S.ck["m"+dia+s[0]])eat+=o[2]});
-    var ex=parseInt(S.ex[dia])||0,cons=eat+ex,pc=Math.min(100,Math.round(cons/d.tg*100));
+    var d=DIAS[dia],tot=0,eat=0,rp=subs(dia);
+    d.s.forEach(function(s){if(s[0]==="x"||rp[s[0]])return;var o=opt(dia,s[0]);tot+=o[2];if(S.ck["m"+dia+s[0]])eat+=o[2]});
+    var ex=parseInt(S.ex[dia])||0,cons=eat+xk(dia),pc=Math.min(100,Math.round(cons/d.tg*100));
     h+=chips(ORD,dia,"setDia");
     h+='<div class="card"><span class="tag '+d.k+'">'+esc(d.t)+'</span>'+(d.sub?'<p class="sub">'+esc(d.sub)+'</p>':'');
     h+='<b>Consumidas: '+cons+' / '+d.tg+' kcal</b><div class="bar"><i style="width:'+pc+'%"></i></div>';
@@ -346,9 +368,10 @@ function render(){
     h+='<div class="ex">Extra no listado: <input class="n" type="number" inputmode="numeric" value="'+(ex||"")+'" placeholder="0" onchange="setEx(this.value)"> kcal</div></div>';
     h+='<div class="card">'+d.s.map(function(s){
       if(s[0]==="x")return '<div class="meal"><b>'+esc(s[1]+' · '+s[2])+'</b></div>';
-      var o=opt(dia,s[0]),k="m"+dia+s[0];
+      var rpl=rp[s[0]];if(rpl)return '<div class="meal"><b>'+s[1]+' '+SL[s[0]]+'</b><em>🔁 Sustituida: '+esc(rpl)+'</em></div>';var o=opt(dia,s[0]),k="m"+dia+s[0];
       var det=o[3].map(function(i){return ITEMS[i[0]][0].toLowerCase()+" "+i[1]+(ITEMS[i[0]][1]==="ud"?" ud":" "+ITEMS[i[0]][1])}).join(" · ");
       return `<label class="it"><input type="checkbox" ${S.ck[k]?'checked':''} onchange="tg('${k}',this.checked);render()"><span><b>${s[1]} ${SL[s[0]]}</b><span class="kc">${o[2]} kcal</span><em>${esc(o[1])}</em><span class="sub">${esc(det)}</span></span></label><div class="gy"><select class="sel" onchange="pk('${dia}','${s[0]}',this.value)">${OPT[s[0]].map(function(x){return `<option value="${x[0]}" ${x[0]===o[0]?'selected':''}>${esc(x[1])} · ${x[2]}</option>`}).join("")}</select></div>`}).join("")+'<button class="r" onclick="reset(\'m'+dia+'\')">Reiniciar día</button></div>';
+    h+=unView(dia);
   }else if(tab==="gym"){
     var g=GYM[gd],T=new Date().toISOString().slice(0,10);
     h+=chips(Object.keys(GYM),gd,"setGd");
